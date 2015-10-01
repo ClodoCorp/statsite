@@ -20,11 +20,25 @@
 #checkout
 include_recipe "git"
 
-git node[:statsite][:path] do
-  repository node[:statsite][:repo]
-  reference node[:statsite][:ref]
-  action :sync
-  not_if { ::FileTest.directory?("#{node[:statsite][:path]}/.git") }
+if node['statsite']['repo'].split("://")[0] == 'https'
+  directory node['statsite']['path'] do
+    owner 'root'
+    group 'root'
+    mode '755'
+  end
+  execute "clone" do
+    cwd node["statsite"]["path"]
+    command "git clone -b master #{node['statsite']["repo"]} ."
+    action :run
+    not_if { ::FileTest.directory?("#{node[:statsite][:path]}/.git") }
+  end
+else
+  git node[:statsite][:path] do
+    repository node[:statsite][:repo]
+    reference node[:statsite][:ref]
+    action :sync
+    not_if { ::FileTest.directory?("#{node[:statsite][:path]}/.git") }
+  end
 end
 
 # build
